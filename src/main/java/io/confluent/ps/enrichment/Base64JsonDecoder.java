@@ -98,6 +98,7 @@ public final class Base64JsonDecoder {
         final String jsonpathForDecodedBase64 = envProps.getProperty("jsonpath.for.decoded.base64");
 
         log.info("JSON PATH Settings: jsonpathToBase64 {} jsonpathForDecodedBase64 {}", jsonpathToBase64, jsonpathForDecodedBase64);
+        log.info("Remove from Payload: {}", removeFromBase64);
 
         final StreamsBuilder builder = new StreamsBuilder();
 
@@ -123,9 +124,10 @@ public final class Base64JsonDecoder {
             String decoded = new String(decodedBytes);
             log.info("decoded = {}", decoded);
             DocumentContext decodedAsJson = JsonPath.parse(decoded);
-            jsonDoc.put("$", jsonpathForDecodedBase64, decoded);
+            log.info("Decoded JSON Data: {}", decodedAsJson.jsonString());
+            jsonDoc.put("$", jsonpathForDecodedBase64, decodedAsJson.json());
             String newJson = jsonDoc.jsonString();
-            log.trace("New JSON Data: {}", newJson);
+            log.info("New JSON Data: {}", newJson);
             return newJson;
         })
         .to(outputTopicName, Produced.with(Serdes.String(), Serdes.String()));
