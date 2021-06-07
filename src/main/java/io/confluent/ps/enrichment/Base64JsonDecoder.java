@@ -97,8 +97,8 @@ public final class Base64JsonDecoder {
         final String removeFromBase64         = envProps.getProperty("remove.from.base64");
         final String jsonpathForDecodedBase64 = envProps.getProperty("jsonpath.for.decoded.base64");
 
-        log.info("JSON PATH Settings: jsonpathToBase64 {} jsonpathForDecodedBase64 {}", jsonpathToBase64, jsonpathForDecodedBase64);
-        log.info("Remove from Payload: {}", removeFromBase64);
+        log.debug("JSON PATH Settings: jsonpathToBase64 {} jsonpathForDecodedBase64 {}", jsonpathToBase64, jsonpathForDecodedBase64);
+        log.debug("Remove from Payload: {}", removeFromBase64);
 
         final StreamsBuilder builder = new StreamsBuilder();
 
@@ -117,17 +117,21 @@ public final class Base64JsonDecoder {
             } catch(PathNotFoundException e) {
                 log.info("JSONPath did not find a value");
             }
-            log.info("base64 = {}", base64);
-            base64 = base64.replace(removeFromBase64, "");
-            log.info("base64 after removal = {}", base64);
-            byte[] decodedBytes = Base64.getDecoder().decode(base64);
-            String decoded = new String(decodedBytes);
-            log.info("decoded = {}", decoded);
-            DocumentContext decodedAsJson = JsonPath.parse(decoded);
-            log.info("Decoded JSON Data: {}", decodedAsJson.jsonString());
-            jsonDoc.put("$", jsonpathForDecodedBase64, decodedAsJson.json());
+            if (base64.length() > 0) {
+                log.debug("base64 = {}", base64);
+                base64 = base64.replace(removeFromBase64, "");
+                log.debug("base64 after removal = {}", base64);
+                byte[] decodedBytes = Base64.getDecoder().decode(base64);
+                String decoded = new String(decodedBytes);
+                log.debug("decoded = {}", decoded);
+                DocumentContext decodedAsJson = JsonPath.parse(decoded);
+                log.debug("Decoded JSON Data: {}", decodedAsJson.jsonString());
+                jsonDoc.put("$", jsonpathForDecodedBase64, decodedAsJson.json());
+            } else {
+                jsonDoc.put("$", jsonpathForDecodedBase64, null);
+            }
             String newJson = jsonDoc.jsonString();
-            log.info("New JSON Data: {}", newJson);
+            log.debug("New JSON Data: {}", newJson);
             return newJson;
         })
         .to(outputTopicName, Produced.with(Serdes.String(), Serdes.String()));
